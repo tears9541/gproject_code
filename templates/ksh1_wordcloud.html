@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block main %}
+    {% load static %}
+    <div class="page-holder w-100 d-flex flex-wrap">
+        <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">各热搜评论词云</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="trendSelect2">选择热搜：</label>
+                                    <select id="trendSelect2" class="form-control">
+                                        {% for keyword in keyword_list %}
+                                             <option value="{{ keyword }}" {% if default_trend == keyword %}selected{% endif %}>
+                                                    {{ keyword }}
+                                                </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="chart-holder">
+                                    <div id="part4" style="width: 100%; height: 600px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <footer class="footer bg-white shadow-sm mt-auto py-3 px-xl-5 w-100">
+            <div class="container-fluid">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    <div class="mb-2 mb-md-0">
+                        <span class="text-muted">微博数据分析平台</span>
+                    </div>
+                    <div>
+                        <a href="#" class="text-muted mr-3">隐私政策</a>
+                        <a href="#" class="text-muted mr-3">使用条款</a>
+                        <a href="#" class="text-muted">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/echarts.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script src="{% static 'js/echarts-wordcloud.min.js' %}"></script>
+    <script src="{% static 'js/china.js' %}"></script>
+
+    <script>
+
+
+    </script>
+    <script>
+        $(document).ready(function () {
+            // 初始化默认图表
+            initDefaultCharts();
+
+            // 绑定下拉框事件
+            bindSelectEvents();
+
+            // 窗口大小变化时重绘图表
+            $(window).resize(function () {
+                resizeAllCharts();
+            });
+        });
+
+        // 初始化默认图表
+        function initDefaultCharts() {
+            // 获取默认选中的值（第一个选项）
+            var defaultTrend = $('#trendSelect2 option').first().val();
+            if (defaultTrend) {
+                // 设置默认选中
+                $('#trendSelect2').val(defaultTrend);
+
+                            // 加载默认数据
+            loadChartData('trendSelect2', 'part4', '{% url 'myApp:ksh1_3' %}', '');
+            }
+        }
+
+        // 绑定下拉框事件
+        function bindSelectEvents() {
+            $('#trendSelect2').change(function () {
+                loadChartData('trendSelect2', 'part4', '{% url 'myApp:ksh1_3' %}', '');
+            });
+        }
+
+        // 通用图表加载函数
+        function loadChartData(selectId, chartId, url, title) {
+            var selectedTrend = $('#' + selectId).val();
+            if (!selectedTrend) return;
+
+            showLoading(chartId);
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: {'trend': selectedTrend},
+                success: function (response) {
+                    renderChart(chartId, title, response);
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error: ", status, error);
+                    hideLoading(chartId);
+                }
+            });
+        }
+
+        // 渲染不同类型的图表
+        function renderChart(chartId, title, data) {
+            var chartDom = document.getElementById(chartId);
+            var myChart = echarts.init(chartDom);
+
+            switch (chartId) {
+                case 'part4':
+                    renderWordCloud(myChart, data);
+                    break;
+            }
+
+            hideLoading(chartId);
+        }
+
+
+
+        // 渲染词云
+        function renderWordCloud(chart, data) {
+            var option = {
+                tooltip: {},
+                series: [{
+                    type: 'wordCloud',
+                    shape: 'circle',
+                    gridSize: 4,
+                    size: ['100%', '100%'],
+                    sizeRange: [20, 100],
+                    rotationRange: [0, 30],
+                    textStyle: {
+                        normal: {
+                            fontFamily: 'sans-serif',
+                            color: function () {
+                                return 'rgb(' + [
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160)
+                                ].join(',') + ')';
+                            }
+                        },
+                        emphasis: {
+                            shadowBlur: 5,
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: data.wordclout_dict
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 显示加载状态
+        function showLoading(chartId) {
+            var container = $('#' + chartId);
+            container.append('<div class="chart-loading">加载中...</div>');
+        }
+
+        // 隐藏加载状态
+        function hideLoading(chartId) {
+            $('#' + chartId + ' .chart-loading').remove();
+        }
+
+        // 重绘所有图表
+        function resizeAllCharts() {
+            ['part4'].forEach(function (chartId) {
+                var chart = echarts.getInstanceByDom(document.getElementById(chartId));
+                if (chart) {
+                    chart.resize();
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .chart-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 16px;
+            z-index: 10;
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>基于情感分析的微博热点话题舆情监控系统</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="all,follow">
+    <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+          integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="{% static 'css/orionicons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.default.css' %}" id="theme-stylesheet">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="shortcut icon" href="{% static 'img/favicon.png' %}?3">
+    <style>
+        :root {
+            --primary-color: #e7cf5f;
+            --secondary-color: #14171A;
+            --accent-color: #E0245E;
+            --light-bg: #F5F8FA;
+            --dark-text: #14171A;
+            --light-text: #657786;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+        }
+
+        .page-holder {
+            min-height: 100vh;
+            background-color: white;
+        }
+
+        .login-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .login-image {
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-right: 20px;
+            padding-right: 20px;
+        }
+
+        .login-form-container {
+            padding: 3rem;
+        }
+
+        .login-title {
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .login-subtitle {
+            color: var(--light-text);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .form-control {
+            height: 50px;
+            border-radius: 8px;
+            border: 1px solid #E1E8ED;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2);
+        }
+
+        .btn-register {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-register:hover {
+            background-color: #19da70;
+            transform: translateY(-2px);
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--light-text);
+            font-size: 0.875rem;
+        }
+
+        .login-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: block;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .login-link:hover {
+            text-decoration: underline;
+        }
+
+        .password-strength {
+            height: 4px;
+            background-color: #e9ecef;
+            margin-top: -1rem;
+            margin-bottom: 1rem;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 992px) {
+            .login-image-col {
+                display: none;
+            }
+
+            .login-form-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page-holder d-flex align-items-center">
+    <div class="container login-container">
+        <div class="row no-gutters">
+            <div class="col-lg-7 login-image-col">
+                <img src="{% static 'img/bg.jpg' %}" alt="微博舆情分析" class="img-fluid login-image" style="height: 100%; width: 100%; object-fit: cover;">
+            </div>
+            <div class="col-lg-5 login-form-container">
+                <h1 class="login-title text-center">基于情感分析的微博热点话题舆情监控系统</h1>
+                <h2 class="login-subtitle text-center">欢迎加入我们!</h2>
+
+                <form id="registerForm" class="mt-4">
+                    <div class="form-group">
+                        <input type="text" name="name" placeholder="请输入用户名" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="请输入邮箱" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="password" name="pwd" id="password" placeholder="请输入密码" class="form-control" required>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="password-strength-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="password" name="pwd2" placeholder="确认密码" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-register">注册</button>
+                </form>
+
+                <a href="{% url 'user:login' %}" class="login-link">已有账号？去登录</a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/popper.js/umd/popper.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'vendor/jquery.cookie/jquery.cookie.js' %}"></script>
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="{% static 'js/js.cookie.min.js' %}"></script>
+<script src="{% static 'js/front.js' %}"></script>
+<script>
+    $(document).ready(function () {
+        // 密码强度检测
+        $('#password').on('input', function() {
+            var password = $(this).val();
+            var strength = 0;
+
+            if (password.length > 0) strength += 1;
+            if (password.length >= 8) strength += 1;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 1;
+            if (password.match(/\d/)) strength += 1;
+            if (password.match(/[^a-zA-Z\d]/)) strength += 1;
+
+            var strengthPercent = (strength / 5) * 100;
+            var color;
+
+            if (strength <= 1) {
+                color = '#dc3545'; // 红色
+            } else if (strength <= 3) {
+                color = '#ffc107'; // 黄色
+            } else {
+                color = '#28a745'; // 绿色
+            }
+
+            $('#password-strength-bar').css({
+                'width': strengthPercent + '%',
+                'background-color': color
+            });
+        });
+
+        $('#registerForm').on('submit', function (event) {
+            event.preventDefault();
+
+            // 获取表单数据
+            var name = $('input[name="name"]').val();
+            var email = $('input[name="email"]').val();
+            var pwd = $('input[name="pwd"]').val();
+            var pwd2 = $('input[name="pwd2"]').val();
+
+            // 检查用户输入是否完整
+            if (!name || !email || !pwd || !pwd2) {
+                alert('请填写完整用户信息');
+                return;
+            }
+
+            // 验证邮箱格式
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('请输入有效的邮箱地址');
+                return;
+            }
+
+            if (pwd !== pwd2) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+
+
+            // 显示加载状态
+            const submitBtn = $(this).find('button[type="submit"]');
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>注册中...');
+
+            // 发送AJAX请求
+            $.ajax({
+                url: '{% url 'user:register' %}',
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function (response) {
+                    if (response.code === 200) {
+                        alert('注册成功！即将跳转到登录页面');
+                        window.location.href = '{% url 'user:login' %}';
+                    } else {
+                        alert(response.msg);
+                    }
+                },
+                error: function (xhr) {
+                    alert('注册失败: ' + (xhr.responseJSON?.msg || '服务器错误'));
+                },
+                complete: function () {
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html('注册');
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% block main %}
+    {% load static %}
+    <div class="page-holder w-100 d-flex flex-wrap">
+        <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">各热搜用户评论趋势</h2>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-3 text-gray"></p>
+                                <div class="form-group">
+                                    <label for="trendSelect">选择热搜：</label>
+                                    <select id="trendSelect" class="form-control">
+                                        {% for keyword in keyword_list %}
+                                            <option value="{{ keyword }}" {% if default_trend == keyword %}selected{% endif %}>
+                                                {{ keyword }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="chart-holder">
+                                    <div id="part2" style="width: 100%; height: 600px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">各热搜男女参与度</h2>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-3 text-gray"></p>
+                                <div class="form-group">
+                                    <label for="trendSelect1">选择热搜：</label>
+                                    <select id="trendSelect1" class="form-control">
+                                        {% for keyword in keyword_list %}
+                                            <option value="{{ keyword }}" {% if default_trend == keyword %}selected{% endif %}>
+                                                {{ keyword }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="chart-holder">
+                                    <div id="part3" style="width: 100%; height: 600px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+        <footer class="footer bg-white shadow-sm mt-auto py-3 px-xl-5 w-100">
+            <div class="container-fluid">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    <div class="mb-2 mb-md-0">
+                        <span class="text-muted">微博数据分析平台</span>
+                    </div>
+                    <div>
+                        <a href="#" class="text-muted mr-3">隐私政策</a>
+                        <a href="#" class="text-muted mr-3">使用条款</a>
+                        <a href="#" class="text-muted">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/echarts.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script src="{% static 'js/echarts-wordcloud.min.js' %}"></script>
+    <script src="{% static 'js/china.js' %}"></script>
+
+    <script>
+
+
+    </script>
+    <script>
+        $(document).ready(function () {
+            // 初始化默认图表
+            initDefaultCharts();
+
+            // 绑定下拉框事件
+            bindSelectEvents();
+
+            // 窗口大小变化时重绘图表
+            $(window).resize(function () {
+                resizeAllCharts();
+            });
+        });
+
+        // 初始化默认图表
+        function initDefaultCharts() {
+            // 获取默认选中的值（第一个选项）
+            var defaultTrend = $('#trendSelect option').first().val();
+            if (defaultTrend) {
+                // 设置默认选中
+                $('#trendSelect, #trendSelect1, #trendSelect2').val(defaultTrend);
+
+                // 加载默认数据
+                loadChartData('trendSelect', 'part2', '{% url 'myApp:ksh1_1' %}');
+                loadChartData('trendSelect1', 'part3', '{% url 'myApp:ksh1_2' %}');
+            }
+        }
+
+        // 绑定下拉框事件
+        function bindSelectEvents() {
+            $('#trendSelect').change(function () {
+                loadChartData('trendSelect', 'part2', '{% url 'myApp:ksh1_1' %}');
+            });
+
+            $('#trendSelect1').change(function () {
+                loadChartData('trendSelect1', 'part3', '{% url 'myApp:ksh1_2' %}');
+            });
+
+
+        }
+
+        // 通用图表加载函数
+        function loadChartData(selectId, chartId, url) {
+            var selectedTrend = $('#' + selectId).val();
+            if (!selectedTrend) return;
+
+            showLoading(chartId);
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: {'trend': selectedTrend},
+                success: function (response) {
+                    renderChart(chartId, selectedTrend, response);
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error: ", status, error);
+                    hideLoading(chartId);
+                }
+            });
+        }
+
+        // 渲染不同类型的图表
+        function renderChart(chartId, title, data) {
+            var chartDom = document.getElementById(chartId);
+            var myChart = echarts.init(chartDom);
+
+            switch (chartId) {
+                case 'part2':
+                    renderTrendChart(myChart, title, data);
+                    break;
+                case 'part3':
+                    renderPieChart(myChart, title, data);
+                    break;
+
+            }
+
+            hideLoading(chartId);
+        }
+
+        // 渲染趋势图
+        function renderTrendChart(chart, title, data) {
+            var option = {
+                title: {
+                    text: title + ' 评论趋势',
+                    left: 'center',
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 16,
+                        fontWeight: 'bold'
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow',
+                        label: {backgroundColor: '#6a7985'}
+                    },
+                    formatter: function (params) {
+                        return params[0].axisValue + '<br/>评论数: ' + params[0].data;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.date_list,
+                    axisLine: {
+                        lineStyle: {color: '#666', width: 1}
+                    },
+                    axisLabel: {
+                        color: '#666',
+                        rotate: 45,
+                        fontSize: 12
+                    },
+                    axisTick: {alignWithLabel: true}
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: {
+                        lineStyle: {color: '#666', width: 1}
+                    },
+                    axisLabel: {color: '#666', fontSize: 12},
+                    splitLine: {
+                        lineStyle: {color: '#eee', type: 'dashed'}
+                    }
+                },
+                series: [{
+                    name: '评论数',
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        width: 4,
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            {offset: 0, color: '#83bff6'},
+                            {offset: 0.5, color: '#188df0'},
+                            {offset: 1, color: '#0077b6'}
+                        ])
+                    },
+                    symbol: 'circle',
+                    symbolSize: 8,
+                    itemStyle: {
+                        color: '#0077b6',
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {offset: 0, color: 'rgba(0, 119, 182, 0.5)'},
+                            {offset: 1, color: 'rgba(0, 119, 182, 0.1)'}
+                        ])
+                    },
+                    data: data.value_list
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 渲染饼图
+        function renderPieChart(chart, title, data) {
+            var option = {
+                title: {
+                    text: title + ' 男女参与度',
+                    left: 'center',
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 16,
+                        fontWeight: 'bold'
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 10,
+                    textStyle: {color: '#333'}
+                },
+                legend: {
+                    top: '5%',
+                    left: 'center',
+                    textStyle: {color: '#666'}
+                },
+                series: [{
+                    name: '参与度',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '55%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{b}: {d}%',
+                        color: '#333',
+                        fontSize: 12
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    labelLine: {
+                        show: true,
+                        lineStyle: {color: '#999'}
+                    },
+                    data: data.data_list,
+                    color: ['#49e891', '#23add4', '#43de8e', '#FFDAC1']
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+
+
+        // 显示加载状态
+        function showLoading(chartId) {
+            var container = $('#' + chartId);
+            container.append('<div class="chart-loading">加载中...</div>');
+        }
+
+        // 隐藏加载状态
+        function hideLoading(chartId) {
+            $('#' + chartId + ' .chart-loading').remove();
+        }
+
+        // 重绘所有图表
+        function resizeAllCharts() {
+            ['part2', 'part3'].forEach(function (chartId) {
+                var chart = echarts.getInstanceByDom(document.getElementById(chartId));
+                if (chart) {
+                    chart.resize();
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .chart-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 16px;
+            z-index: 10;
+        }
+    </style>
+{% endblock %}

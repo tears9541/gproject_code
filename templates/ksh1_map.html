@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block main %}
+    {% load static %}
+    <div class="page-holder w-100 d-flex flex-wrap">
+        <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">各地区用户发布微博数</h2>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-3 text-gray"></p>
+                                <div class="chart-holder">
+                                    <div id="part1" style="width: 100%;height: 600px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <footer class="footer bg-white shadow-sm mt-auto py-3 px-xl-5 w-100">
+            <div class="container-fluid">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    <div class="mb-2 mb-md-0">
+                        <span class="text-muted">微博数据分析平台</span>
+                    </div>
+                    <div>
+                        <a href="#" class="text-muted mr-3">隐私政策</a>
+                        <a href="#" class="text-muted mr-3">使用条款</a>
+                        <a href="#" class="text-muted">联系我们</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/echarts.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script src="{% static 'js/china.js' %}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var chartDom = document.getElementById('part1');
+            var myChart = echarts.init(chartDom);
+
+            // 配置图表
+            var option = {
+                title: {
+                    text: '中国各地区用户发布微博数分布',
+                    left: 'center',
+                    textStyle: {
+                        color: '#333',
+                        fontSize: 18,
+                        fontWeight: 'bold'
+                    },
+                    subtextStyle: {
+                        color: '#666',
+                        fontSize: 12
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}<br/>评论数: {c}',
+                    backgroundColor: 'rgba(50,50,50,0.7)',
+                    borderColor: '#333',
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                toolbox: {
+                    show: true,
+                    orient: 'vertical',
+                    right: 20,
+                    top: 'center',
+                    feature: {
+                        dataView: {
+                            readOnly: false,
+                            buttonColor: '#4b77be',
+                            textareaColor: '#f4f4f4'
+                        },
+                        restore: {
+                            buttonColor: '#4b77be'
+                        },
+                        saveAsImage: {
+                            pixelRatio: 2,
+                            backgroundColor: '#fff'
+                        }
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: {{ max_value|default:0 }},
+                    text: ['高', '低'],
+                    realtime: false,
+                    calculable: true,
+                    inRange: {
+                        color: ['#e0f3f8', '#abd9e9', '#74add1', '#4f71a5', '#313695']
+                    },
+                    textStyle: {
+                        color: '#cbcaca'
+                    },
+                    bottom: 50
+                },
+                series: [{
+                    name: '评论数',
+                    type: 'map',
+                    map: 'china',
+                    aspectScale: 0.75,
+                    zoom: 1.2,
+                    label: {
+                        show: true,
+                        color: '#655f5f',
+                        fontSize: 12
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            color: '#333',
+                            fontWeight: 'bold'
+                        },
+                        itemStyle: {
+                            areaColor: '#fe9929',
+                            borderWidth: 1,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)',
+                            shadowBlur: 10
+                        }
+                    },
+                    itemStyle: {
+                        areaColor: '#e0f3f8',
+                        borderColor: '#999',
+                        borderWidth: 0.5
+                    },
+                    data: {{ map_value|safe }}
+                }]
+            };
+
+            // 使用配置项更新图表
+            myChart.setOption(option);
+
+            // 窗口大小变化时重绘图表
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        });
+    </script>
+{% endblock %}

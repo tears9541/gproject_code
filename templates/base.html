@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>基于情感分析的微博热点话题舆情监控系统</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="all,follow">
+    <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+          integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,800">
+    <link rel="stylesheet" href="{% static 'css/orionicons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.blue.css' %}" id="theme-stylesheet">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="shortcut icon" href="{% static 'img/favicon.png' %}?3">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-select.min.css' %}">
+
+
+    <style>
+        :root {
+            --primary-color: #ea714d;
+            --secondary-color: #f8f9fc;
+            --accent-color: #2e59d9;
+            --text-color: #5a5c69;
+            --light-gray: #e3e6f0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+            background-color: #f8f9fc;
+        }
+
+        .header {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, #7bf6c4 100%);
+            color: white;
+        }
+
+        .sidebar-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: all 0.3s;
+        }
+
+        .sidebar-link:hover {
+            font-size: 20px;
+            font-family: 宋体;
+            color: #e72323 !important;
+            background-color: rgba(234, 193, 46, 0.9);
+            border-radius: 20px;
+        }
+
+        /* 当前页面：侧边栏对应项高亮 */
+        .sidebar-list-item.active .sidebar-link {
+            color: #fff !important;
+            font-weight: 700;
+            background-color: rgba(255, 255, 255, 0.22);
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            margin: 0 -0.25rem;
+            box-shadow: inset 3px 0 0 #fff;
+        }
+
+        .sidebar-list-item.active .sidebar-link:hover {
+            font-size: inherit;
+            font-family: inherit;
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.28);
+        }
+
+
+        /* 分页样式 */
+        .pagination {
+            margin-top: 1.5rem;
+        }
+
+        .page-item .page-link {
+            color: var(--primary-color);
+            border: 1px solid var(--light-gray);
+            margin: 0 3px;
+            border-radius: 4px !important;
+            min-width: 38px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .page-item.disabled .page-link {
+            color: #b7b9cc;
+        }
+
+        .page-link:hover:not(.active) {
+            background-color: var(--secondary-color);
+            border-color: var(--light-gray);
+        }
+
+        .page-item:first-child .page-link,
+        .page-item:last-child .page-link {
+            border-radius: 4px !important;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: static;
+                height: auto;
+            }
+
+            .page-item .page-link {
+                padding: 0.375rem 0.5rem;
+                min-width: 32px;
+            }
+        }
+
+        .sidebar-list-item {
+            padding: 15px 0;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-white-10 {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .hover-bg-gray-50:hover {
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .rounded-lg {
+            border-radius: 12px !important;
+        }
+
+        .shadow-sm {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <nav class="navbar navbar-expand-lg px-4 py-2 bg-white shadow"><a href="#"
+                                                                      class="sidebar-toggler text-gray-500 mr-4 mr-lg-5 lead"><i
+            class="fas fa-align-left"></i></a><a href="{% url 'myApp:index' %}"
+                                                 class="navbar-brand font-weight-bold text-uppercase text-base">基于情感分析的微博热点话题舆情监控系统</a>
+        <ul class="ml-auto d-flex align-items-center list-unstyled mb-0">
+            <li class="nav-item dropdown ml-auto">
+                <a id="userInfo" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                   class="nav-link dropdown-toggle">
+                    <img src="{{ avatar }}" alt="用户头像" style="max-width: 2.5rem;"
+                         class="img-fluid rounded-circle shadow">
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userInfo">
+                    <div class="dropdown-header text-center">
+                        <strong>用户设置</strong>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'user:userinfo' %}" class="dropdown-item">
+                        <i class="fas fa-user mr-2"></i>个人中心
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'user:logout' %}" class="dropdown-item">
+                        <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</header>
+<div class="d-flex align-items-stretch">
+    <div id="sidebar" class="sidebar py-3">
+        <div class="text-gray-400 text-uppercase px-3 px-lg-4 py-4 font-weight-bold small headings-font-family">主菜单
+        </div>
+        <ul class="sidebar-menu list-unstyled">
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'index' %} active{% endif %}"><a href="{% url 'myApp:index' %}" class="sidebar-link text-muted"><i
+                    class="o-myApp-1 mr-3 text-white"></i><span>主页</span></a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'data_list' %} active{% endif %}"><a href="{% url 'myApp:data_list' %}" class="sidebar-link text-muted"><i
+                    class="o-sales-up-1 mr-3 text-white"></i><span>微博舆情数据展示</span></a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'ksh1_map' %} active{% endif %}"><a href="{% url 'myApp:ksh1_map' %}" class="sidebar-link text-muted">
+                    <i class="fas fa-map mr-3 text-white"></i><span>舆情数据地图分布</span>
+                </a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'ksh1_charts' %} active{% endif %}"><a href="{% url 'myApp:ksh1_charts' %}" class="sidebar-link text-muted">
+                    <i class="fas fa-chart-line mr-3 text-white"></i><span>舆情数据分析</span>
+                </a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'ksh1_wordcloud' %} active{% endif %}"><a href="{% url 'myApp:ksh1_wordcloud' %}" class="sidebar-link text-muted">
+                    <i class="fas fa-cloud mr-3 text-white"></i><span>热搜评论词云</span>
+                </a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'ksh2' %} active{% endif %}"><a href="{% url 'myApp:ksh2' %}" class="sidebar-link text-muted"><i
+                    class="o-survey-1 mr-3 text-white"></i><span>情感分析</span></a></li>
+            <li class="sidebar-list-item{% if request.resolver_match and request.resolver_match.namespace == 'myApp' and request.resolver_match.url_name == 'spider_data' %} active{% endif %}"><a href="{% url 'myApp:spider_data' %}" class="sidebar-link text-muted"><i
+                    class="o-exit-1 mr-3 text-white"></i><span>数据爬取</span></a></li>
+        </ul>
+    </div>
+    <div class="page-holder w-100 d-flex flex-wrap">
+        {% block main %}
+        {% endblock %}
+        <footer class="footer bg-white shadow align-self-end py-3 px-xl-5 w-100">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-left text-primary">
+                        <p class="mb-2 mb-md-0"></p>
+                    </div>
+                    <div class="col-md-6 text-center text-md-right text-gray-400">
+                        <p class="mb-0">Copyright &copy; 2019.Company name All rights reserved.More Templates </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/popper.js/umd/popper.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'vendor/jquery.cookie/jquery.cookie.js' %}"></script>
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="{% static 'js/js.cookie.min.js' %}"></script>
+<script src="{% static 'js/charts-myApp.js' %}"></script>
+<script src="{% static 'js/front.js' %}"></script>
+<script src="{% static 'js/bootstrap-select.min.js' %}"></script>
+<script>
+    // 自动初始化下拉菜单
+    document.addEventListener('DOMContentLoaded', function () {
+        // 初始化所有下拉菜单
+        $('.dropdown-toggle').dropdown();
+
+        // 侧边栏折叠功能
+        $('.sidebar-toggler').click(function () {
+            $('.sidebar').toggleClass('collapsed');
+            $('.content').toggleClass('expanded');
+        });
+
+    });
+</script>
+</body>
+</html>

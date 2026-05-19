@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block main %}
+
+    <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">选择热搜</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="ksh2Keyword">热搜词：</label>
+                                    <select id="ksh2Keyword" class="form-control">
+                                        {% for keyword in keyword_list %}
+                                            <option value="{{ keyword }}" {% if selected_keyword == keyword %}selected{% endif %}>
+                                                {{ keyword }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <small class="text-muted">切换热搜会刷新本页的情感分布与词云数据。</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                   <div class="col-lg-6">
+                       <div class="card mb-4">
+                           <div class="card-header">
+                               <h2>各情感倾向分布</h2>
+                           </div>
+                           <div class="card-body">
+                               <div class="chart-holder">
+                                   <div id="part5" style="height: 400px;width: 100%"></div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">各热搜平均情感得分</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-holder">
+                                    <div id="part6" style="width: 100%; height: 400px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <div class="col-lg-12">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h2 class="h6 text-uppercase mb-0">各情感倾向评论词云</h2>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3 text-gray"></p>
+                            <div class="form-group">
+                                <label for="lstmSelect">选择情感倾向：</label>
+                                <select id="lstmSelect" class="form-control">
+                                    {% for lstm_result in lstm_result_list %}
+                                         <option value="{{ lstm_result }}" {% if select_lstm == lstm_result %}selected{% endif %}>
+                                                {{ lstm_result }}
+                                            </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="chart-holder">
+                                <div id="part7" style="width: 100%; height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/echarts.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script src="{% static 'js/echarts-wordcloud.min.js' %}"></script>
+    <script>
+        var chartDom = document.getElementById('part5');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+            title: {
+                text: '评论情感分布',
+                subtext: '基于LSTM情感分析',
+                left: 'center',
+                textStyle: {
+                    color: '#333',
+                    fontSize: 18,
+                    fontWeight: 'bold'
+                },
+                subtextStyle: {
+                    color: '#666',
+                    fontSize: 12
+                }
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a}<br/>{b}: {c} ({d}%)',
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                borderColor: '#ddd',
+                borderWidth: 1,
+                padding: 10,
+                textStyle: {
+                    color: '#333',
+                    fontSize: 14
+                }
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                top: 'center',
+                textStyle: {
+                    color: '#666',
+                    fontSize: 12,
+                    fontWeight: 'normal'
+                },
+                itemGap: 10,
+                itemWidth: 20,
+                itemHeight: 14
+            },
+            series: [{
+                name: '情感分布',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['55%', '50%'],
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 8,
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0, 0, 0, 0.1)'
+                },
+                label: {
+                    show: true,
+                    formatter: '{b}: {d}%',
+                    fontSize: 12,
+                    color: '#333'
+                },
+                labelLine: {
+                    show: true,
+                    length: 10,
+                    length2: 20,
+                    lineStyle: {
+                        width: 1,
+                        color: '#999'
+                    }
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    },
+                    label: {
+                        show: true,
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    }
+                },
+                data: {{ lstm_res|safe }},
+                color: [
+                    '#d7ec12',
+                    '#1ee880',
+                    '#e54242',
+
+
+                ]
+            }],
+            animationEasing: 'cubicInOut',
+            animationDuration: 1500
+        };
+
+        option && myChart.setOption(option);
+    </script>
+    <script>
+        var chartDom = document.getElementById('part6');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+            title: {
+                text: '情感平均得分',
+                subtext: '按热搜话题统计',
+                left: 'center',
+                textStyle: {
+                    color: '#333',
+                    fontSize: 18,
+                    fontWeight: 'bold'
+                },
+                subtextStyle: {
+                    color: '#666',
+                    fontSize: 12
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow',
+                    shadowStyle: {
+                        color: 'rgba(150, 150, 150, 0.2)'
+                    }
+                },
+                formatter: '{b}<br/>平均得分: {c}',
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                borderColor: '#ddd',
+                borderWidth: 1,
+                padding: 10,
+                textStyle: {
+                    color: '#333',
+                    fontSize: 14
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '20%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: {{ name_list|safe }},
+                axisTick: {
+                    alignWithLabel: true,
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                axisLabel: {
+                    color: '#666',
+                    fontSize: 12,
+                    interval: 0,
+                    rotate: 30
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd',
+                        width: 1
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '平均得分',
+                nameTextStyle: {
+                    color: '#666',
+                    fontSize: 12,
+                    padding: [0, 0, 0, 40]
+                },
+                axisLabel: {
+                    color: '#666',
+                    fontSize: 12
+                },
+                axisLine: {
+                    show: true,
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed',
+                        color: '#eee'
+                    }
+                },
+                min: function (value) {
+                    return Math.max(0, value.min - 0.5);
+                }
+            },
+            series: [{
+                name: '平均得分',
+                type: 'bar',
+                barWidth: '50%',
+                data: {{ value_list|safe }},
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        {offset: 0, color: '#83bff6'},
+                        {offset: 0.5, color: '#188df0'},
+                        {offset: 1, color: '#0077b6'}
+                    ]),
+                    borderRadius: [4, 4, 0, 0],
+                    borderColor: '#fff',
+                    borderWidth: 1,
+                    shadowColor: 'rgba(0, 0, 0, 0.1)',
+                    shadowBlur: 5,
+                    shadowOffsetY: 2
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowColor: 'rgba(0, 0, 0, 0.3)',
+                        shadowBlur: 10,
+                        shadowOffsetY: 5
+                    }
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}',
+                    color: '#333',
+                    fontSize: 12
+                }
+            }],
+            animationEasing: 'elasticOut',
+            animationDuration: 1500
+        };
+
+        option && myChart.setOption(option);
+    </script>
+
+    <script>
+$(document).ready(function () {
+    // 初始化词云图表
+    var initialChart = echarts.init(document.getElementById('part7'));
+    initialChart.setOption({
+        tooltip: {},
+        series: [{
+            type: 'wordCloud',
+            shape: 'circle',
+            gridSize: 4,
+            size: ['100%', '100%'],
+            sizeRange: [20, 100],
+            rotationRange: [0, 30],
+            textStyle: {
+                normal: {
+                    fontFamily: 'sans-serif',
+                    color: function () {
+                        return 'rgb(' + [
+                            Math.round(Math.random() * 160),
+                            Math.round(Math.random() * 160),
+                            Math.round(Math.random() * 160)
+                        ].join(',') + ')';
+                    }
+                },
+                emphasis: {
+                    shadowBlur: 5,
+                    shadowColor: '#333'
+                }
+            },
+            data: {{ initial_wordcloud|safe }},
+        }]
+    });
+
+    // 下拉框变更事件
+    $('#lstmSelect').change(function () {
+        var lstmSelect = $(this).val();
+        if (!lstmSelect) return;
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url 'myApp:ksh2_1' %}',
+            data: {'lstmSelect': lstmSelect, 'keyword': $('#ksh2Keyword').val()},
+            success: function (response) {
+                initialChart.setOption({
+                    series: [{
+                        data: response.wordclout_dict
+                    }]
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("AJAX Error: ", status, error);
+            }
+        });
+    });
+
+    // 切换热搜：通过 querystring 刷新页面（饼图/柱图数据由服务端渲染）
+    $('#ksh2Keyword').change(function () {
+        var kw = $(this).val();
+        var url = new URL(window.location.href);
+        if (kw) url.searchParams.set('keyword', kw);
+        else url.searchParams.delete('keyword');
+        window.location.href = url.toString();
+    });
+
+    // 触发初始加载（如果默认选项不为空）
+    {% if select_lstm %}
+    $('#lstmSelect').trigger('change');
+    {% endif %}
+});
+</script>
+{% endblock %}

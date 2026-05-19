@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                   <div class="col-lg-12 mb-12">
+                       <div class="card shadow-sm border-0">
+                           <div class="card-header text-white">
+                               <h6>微博舆情评论爬取</h6>
+                           </div>
+                           <div class="card-body">
+                               {% if error %}
+                                   <div class="alert alert-danger" role="alert">
+                                       {{ error }}
+                                   </div>
+                               {% endif %}
+                               <form method="POST" class="mb-4">
+                                   {% csrf_token %}
+                                   <div class="form-row align-items-center">
+                                       <div class="col-md-5 mb-2">
+                                           <div class="input-group">
+                                               <div class="el-input-group--prepend">
+                                                   <span class="input-group-text bg-white"><i
+                                                            class="fas fa-search text-primary"></i></span>
+                                               </div>
+                                               <input type="text" name="search" class="form-control border-left-0" placeholder="请输入爬取的热搜话题..." value="{{ search_query|default:'' }}">
+                                           </div>
+                                       </div>
+                                       <div class="col-md-2 mb-2">
+                                           <button type="submit" class="btn btn-warning btn-block">
+                                               <i class="fas fa-filter mr-1"></i>开始爬取
+                                           </button>
+                                       </div>
+                                   </div>
+                               </form>
+
+                               {% if not spider_post_mode and page_obj %}
+                               <p class="text-muted small mb-2">共 {{ page_obj.paginator.count }} 条，每页 20 条</p>
+                               {% endif %}
+
+                               <div class="table-responsive">
+                                   <table class="table table-hover">
+                                       <thead class="thead-hover">
+                                       <tr>
+                                           <th>#</th>
+                                           <th>评论内容</th>
+                                           <th>地区</th>
+                                           <th>性别</th>
+                                           <th>粉丝数</th>
+                                           <th>关注数</th>
+                                           <th>微博数</th>
+                                           <th>评论时间</th>
+                                           <th>热搜关键词</th>
+                                           <th>情感倾向</th>
+                                           <th>情感得分</th>
+                                       </tr>
+                                       </thead>
+
+                                   <tbody id="spider-tbody" class="{% if spider_post_mode %}js-spider-paginate{% endif %}">
+                                   {% for comment in results %}
+                                        <tr>
+                                            <td class="spider-row-num">{% if spider_post_mode %}{{ forloop.counter }}{% else %}{{ page_obj.start_index|add:forloop.counter0 }}{% endif %}</td>
+                                            <td class="text-wrap" style="max-width: 200px">{{ comment.content }}</td>
+                                            <td>{{ comment.area|default:"未知" }}</td>
+                                            <td>
+                                                {% if comment.gender == '男' %}
+                                                    <span class="badge badge-primary">{{ comment.gender }}</span>
+                                                {% elif comment.gender == '女' %}
+                                                    <span class="badge badge-pink">{{ comment.gender }}</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">{{ comment.gender|default:"未知" }}</span>
+                                                {% endif %}
+                                            </td>
+                                           <td>{{ comment.fans_num|default:"-" }}</td>
+                                           <td>{{ comment.haoyou_num|default:"-" }}</td>
+                                           <td>{{ comment.weibo_num|default:"-" }}</td>
+                                           <td>{{ comment.pub_time }}</td>
+                                           <td><span class="badge badge-info">{{ comment.hot_name }}</span></td>
+                                           <td>
+                                               {% if comment.lstm_result == "积极" %}
+                                                   <span class="badge badge-success">{{ comment.lstm_result }}</span>
+                                               {% elif comment.lstm_result == "消极" %}
+                                                   <span class="badge badge-danger">{{ comment.lstm_result }}</span>
+                                               {% elif comment.lstm_result == "中性" %}
+                                                   <span class="badge badge-secondary">{{ comment.lstm_result }}</span>
+                                               {% elif comment.lstm_result %}
+                                                   <span class="badge badge-warning">{{ comment.lstm_result }}</span>
+                                               {% else %}
+                                                   <span class="badge badge-light">未知</span>
+                                               {% endif %}
+                                           </td>
+                                           <td>
+                                               {% if comment.lstm_score is not None %}
+                                                   <small class="text-muted">{{ comment.lstm_score|floatformat:2 }}</small>
+                                               {% else %}
+                                                   -
+                                               {% endif %}
+                                           </td>
+                                        </tr>
+                                   {% empty %}
+                                        <tr>
+                                            <td colspan="11" class="text-center text-muted">暂无评论数据</td>
+                                        </tr>
+                                   {% endfor %}
+                                   </tbody>
+                               </table>
+                               </div>
+
+                               {# GET：服务端分页（数据库） #}
+                               {% if not spider_post_mode and page_obj and page_obj.paginator.num_pages > 1 %}
+                               <nav class="mt-3" aria-label="数据库列表分页">
+                                    <ul class="pagination justify-content-center flex-wrap">
+                                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                            <a class="page-link" href="?page=1">首页</a>
+                                        </li>
+                                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                            <a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">上一页</a>
+                                        </li>
+                                        <li class="page-item disabled"><span class="page-link">第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页</span></li>
+                                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                            <a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">下一页</a>
+                                        </li>
+                                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">尾页</a>
+                                        </li>
+                                    </ul>
+                               </nav>
+                               {% endif %}
+
+                               {# POST 爬取结果：行数超过 20 时由脚本分页 #}
+                               {% if spider_post_mode %}
+                               <div id="spider-post-pagination-wrap" class="mt-3 d-none" aria-live="polite"></div>
+                               {% endif %}
+                           </div>
+                       </div>
+                   </div>
+                </div>
+            </section>
+        </div>
+{% if spider_post_mode %}
+<script>
+(function () {
+    var tbody = document.getElementById('spider-tbody');
+    if (!tbody || !tbody.classList.contains('js-spider-paginate')) return;
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    if (rows.length === 1 && rows[0].querySelector('td[colspan]')) return;
+    var perPage = 20;
+    if (rows.length <= perPage) return;
+    var wrap = document.getElementById('spider-post-pagination-wrap');
+    if (!wrap) return;
+    var totalPages = Math.ceil(rows.length / perPage);
+    var current = 1;
+    var curEl = document.createElement('span');
+    curEl.id = 'spider-post-cur';
+    curEl.textContent = '1';
+
+    function applyPage(page) {
+        current = Math.max(1, Math.min(totalPages, page));
+        var start = (current - 1) * perPage;
+        rows.forEach(function (row, i) {
+            var show = i >= start && i < start + perPage;
+            row.style.display = show ? '' : 'none';
+            if (show) {
+                var numCell = row.querySelector('.spider-row-num');
+                if (numCell) numCell.textContent = String(i + 1);
+            }
+        });
+        curEl.textContent = String(current);
+    }
+
+    var nav = document.createElement('nav');
+    nav.setAttribute('aria-label', '本次爬取结果分页');
+    nav.className = 'mt-2';
+    var ul = document.createElement('ul');
+    ul.className = 'pagination justify-content-center flex-wrap mb-0';
+
+    function liLink(label, delta) {
+        var li = document.createElement('li');
+        li.className = 'page-item';
+        var a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.textContent = label;
+        a.addEventListener('click', function (e) {
+            e.preventDefault();
+            applyPage(current + delta);
+        });
+        li.appendChild(a);
+        return li;
+    }
+
+    ul.appendChild(liLink('上一页', -1));
+    var info = document.createElement('li');
+    info.className = 'page-item disabled';
+    var span = document.createElement('span');
+    span.className = 'page-link';
+    span.appendChild(document.createTextNode('第 '));
+    span.appendChild(curEl);
+    span.appendChild(document.createTextNode(' / ' + totalPages + ' 页（每页 ' + perPage + ' 条）'));
+    info.appendChild(span);
+    ul.appendChild(info);
+    ul.appendChild(liLink('下一页', 1));
+
+    nav.appendChild(ul);
+    wrap.appendChild(nav);
+    wrap.classList.remove('d-none');
+    applyPage(1);
+})();
+</script>
+{% endif %}
+{% endblock %}

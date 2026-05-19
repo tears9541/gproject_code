@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block main %}
+<div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                    <div class="col-xl-3 col-lg-6 mb-4 mb-xl-0">
+                        <div class="bg-white shadow roundy p-4 h-100 d-flex align-items-center justify-content-between">
+                            <div class="flex-grow-1 d-flex align-items-center">
+                                <div class="dot mr-3 bg-violet"></div>
+                                <div class="text">
+                                    <h6 class="mb-0">评论总数</h6><span class="text-gray">{{ comment_counts }}</span>
+                                </div>
+                            </div>
+                            <div class="icon text-white bg-violet"><i class="fas fa-server"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 mb-4 mb-xl-0">
+                        <div class="bg-white shadow roundy p-4 h-100 d-flex align-items-center justify-content-between">
+                            <div class="flex-grow-1 d-flex align-items-center">
+                                <div class="dot mr-3 bg-green"></div>
+                                <div class="text">
+                                    <h6 class="mb-0">省份数量</h6><span class="text-gray">{{ area_counts }}</span>
+                                </div>
+                            </div>
+                            <div class="icon text-white bg-green"><i class="far fa-clipboard"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 mb-4 mb-xl-0">
+                        <div class="bg-white shadow roundy p-4 h-100 d-flex align-items-center justify-content-between">
+                            <div class="flex-grow-1 d-flex align-items-center">
+                                <div class="dot mr-3 bg-blue"></div>
+                                <div class="text">
+                                    <h6 class="mb-0">微博发布数</h6><span class="text-gray">{{ weibo_counts }}</span>
+                                </div>
+                            </div>
+                            <div class="icon text-white bg-blue"><i class="fa fa-dolly-flatbed"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 mb-4 mb-xl-0">
+                        <div class="bg-white shadow roundy p-4 h-100 d-flex align-items-center justify-content-between">
+                            <div class="flex-grow-1 d-flex align-items-center">
+                                <div class="dot mr-3 bg-red"></div>
+                                <div class="text">
+                                    <h6 class="mb-0">系统用户数</h6><span class="text-gray">{{ user_counts }}</span>
+                                </div>
+                            </div>
+                            <div class="icon text-white bg-red"><i class="fas fa-receipt"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <div class="row">
+                    <div class="col-lg-12 mb-4 mb-lg-0">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">用户增长趋势</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-holder">
+                                    <div id="usercreate" style="height: 350px;width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 20px">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="h6 text-uppercase mb-0">最新用户评论</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-holder">
+                                    {% for comments in random_comments %}
+                                    <div class="p-3 border-bottom hover-bg-gray-50 d-flex align-items-center">
+                                        <div class="mr-3 text-center" style="width: 40px;">
+                                            <span class="badge badge-primary rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                  style="width: 30px; height: 30px;">{{ forloop.counter }}</span>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <h6 class="mb-0 font-weight-bold">{{ comments.keyword }}</h6>
+                                                <span class="badge badge-light">{{ comments.area }}</span>
+                                            </div>
+                                            <p class="mb-0 text-muted">{{ comments.comment_text|slice:":100" }}
+                                                    {% if comments.comment_text|length > 100 %}...{% endif %}</p>
+                                        </div>
+                                        <div class="ml-3">
+                                            <i class="fas fa-chevron-right text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                <div>
+                                    <a href="{% url 'myApp:data_list' %}" class="btn btn-sm btn-outline-primary" style="margin-left: 500px;margin-top: 15px">查看全部评论</a>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script>
+        var chartDom = document.getElementById('usercreate');
+        var myChart = echarts.init(chartDom);
+
+        // 现代风格的图表配置
+        var option = {
+            color: ['#d49e32'],
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: {{ date_list|safe }},
+                axisLine: {
+                    lineStyle: {
+                        color: '#e0e0e0'
+                    }
+                },
+                axisLabel: {
+                    color: '#999'
+                }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: {
+                    show: false
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLabel: {
+                    color: '#999'
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f0f0f0'
+                    }
+                }
+            },
+            series: [{
+                data: {{ count_list|safe }},
+                type: 'line',
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 8,
+                lineStyle: {
+                    width: 3,
+                    shadowColor: 'rgba(103, 115, 241, 0.3)',
+                    shadowBlur: 10,
+                    shadowOffsetY: 8
+                },
+                itemStyle: {
+                    color: '#998d75',
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                        offset: 0,
+                        color: 'rgba(222,206,55,0.5)'
+                    }, {
+                        offset: 1,
+                        color: 'rgba(227,146,79,0.1)'
+                    }])
+                },
+                emphasis: {
+                    itemStyle: {
+                        color: '#fff',
+                        borderColor: '#b36c45',
+                        borderWidth: 2
+                    }
+                }
+            }]
+        };
+
+        option && myChart.setOption(option);
+
+        // 响应式调整图表大小
+        window.addEventListener('resize', function () {
+            myChart.resize();
+        });
+    </script>
+
+{% endblock %}

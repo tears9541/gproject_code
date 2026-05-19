@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <div class="container-fluid px-xl-5">
+            <section class="py-5">
+                <div class="row">
+                   <div class="col-lg-12 mb-12">
+                       <div class="card shadow-sm border-0">
+                           <div class="card-header text-white">
+                               <h6>微博舆情数据展示</h6>
+                           </div>
+                           <div class="card-body">
+                               <form method="GET" class="mb-4">
+                                   <div class="form-row align-items-center">
+                                       <div class="col-md-5 mb-2">
+                                           <div class="input-group">
+                                               <div class="el-input-group--prepend">
+                                                   <span class="input-group-text bg-white"><i
+                                                            class="fas fa-search text-primary"></i></span>
+                                               </div>
+                                               <input type="text" name="search" class="form-control border-left-0" placeholder="请输入搜索的评论内容..." value="{{ search_query }}">
+                                           </div>
+                                       </div>
+                                       <div class="col-md-5 mb-2">
+                                           <select name="keyword" class="form-control" title="请选择热搜关键词">
+                                               {% for keyword in keywords %}
+                                                   <option value="{{ keyword }}" {% if keyword == selected_keyword %}selected{% endif %}>
+                                                   {{ keyword }}
+                                                   </option>
+                                                {% endfor %}
+                                           </select>
+                                       </div>
+                                       <div class="col-md-2 mb-2">
+                                           <button type="submit" class="btn btn-warning btn-block">
+                                               <i class="fas fa-filter mr-1"></i>筛选
+                                           </button>
+                                       </div>
+                                   </div>
+                               </form>
+                               <div class="table-responsive">
+                                   <table class="table table-hover">
+                                       <thead class="thead-hover">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>评论内容</th>
+                                            <th>地区</th>
+                                            <th>性别</th>
+                                            <th>粉丝数</th>
+                                            <th>关注数</th>
+                                            <th>微博数</th>
+                                            <th>评论时间</th>
+                                            <th>热搜关键词</th>
+                                            <th>情感倾向</th>
+                                            <th>情感得分</th>
+                                        </tr>
+                                       </thead>
+
+                                   <tbody>
+                                   {% for comment in page_obj %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td class="text-wrap" style="max-width: 200px">{{ comment.comment_text }}</td>
+                                            <td>{{ comment.area|default:"未知" }}</td>
+                                            <td>
+                                                {% if comment.gender == '男' %}
+                                                    <span class="badge badge-primary">{{ comment.gender }}</span>
+                                                {% elif comment.gender == '女' %}
+                                                    <span class="badge badge-pink">{{ comment.gender }}</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">{{ comment.gender|default:"未知" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ comment.fans_num|default:"-" }}</td>
+                                            <td>{{ comment.follow_num|default:"-" }}</td>
+                                            <td>{{ comment.pub_num|default:"-" }}</td>
+                                            <td>{{ comment.comment_date|date:"Y-m-d H:i" }}</td>
+                                            <td><span class="badge badge-info">{{ comment.keyword }}</span></td>
+                                            <td>
+                                                {% if comment.lstm_result == "积极" %}
+                                                        <span class="badge badge-success">{{ comment.lstm_result }}</span>
+                                                {% elif comment.lstm_result == "消极" %}
+                                                        <span class="badge badge-danger">{{ comment.lstm_result }}</span>
+                                                {% elif comment.lstm_result == "中性" %}
+                                                        <span class="badge badge-secondary">{{ comment.lstm_result }}</span>
+                                                {% else %}
+                                                        <span class="badge badge-warning">{{ comment.lstm_result|default:"未知" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if comment.lstm_score %}
+                                                    <div class="progress" style="height: 6px">
+                                                        <div class="progress-bar
+                                                            {% if comment.lstm_score > 0.6 %}bg-success
+                                                            {% elif comment.lstm_score < 0.4 %}bg-danger
+                                                            {% else %}bg-secondary{% endif %}"
+                                                             role="progressbar"
+                                                             style="width: {% widthratio comment.lstm_score 1 100 %}%"
+                                                             aria-valuenow="{{ comment.lstm_score|floatformat:2 }}"
+                                                             aria-valuemin="0"
+                                                             aria-valuemax="1">
+                                                        </div>
+                                                    </div>
+                                            <small class="text-muted">{{ comment.lstm_score|floatformat:2 }}</small>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                            </td>
+                                        </tr>
+                                   {% endfor %}
+                                   </tbody>
+                               </table>
+                               </div>
+                           <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               href="?page=1&search={{ search_query }}&keyword={{ selected_keyword }}"
+                                               aria-label="First">
+                                                <span aria-hidden="true">首页</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               href="?page=
+
+                                                       {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}&search={{ search_query }}&keyword={{ selected_keyword }}"
+                                               aria-label="Previous">
+                                                <span aria-hidden="true">上一页</span>
+                                            </a>
+                                        </li>
+                                        {% with start=page_obj.number|add:"-2" end=page_obj.number|add:"2" %}
+                                            {% if start < 1 %}
+                                                {% with start=1 end=5 %}
+                                                    {% if end > page_obj.paginator.num_pages %}
+                                                        {% with end=page_obj.paginator.num_pages %}
+                                                            {% for num in page_obj.paginator.page_range %}
+                                                                {% if num >= start and num <= end %}
+                                                                    <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                                                        <a class="page-link"
+                                                                           href="?page={{ num }}&search={{ search_query }}&keyword={{ selected_keyword }}">{{ num }}</a>
+                                                                    </li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        {% for num in page_obj.paginator.page_range %}
+                                                            {% if num >= start and num <= end %}
+                                                                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                                                    <a class="page-link"
+                                                                       href="?page={{ num }}&search={{ search_query }}&keyword={{ selected_keyword }}">{{ num }}</a>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% elif end > page_obj.paginator.num_pages %}
+                                                {% with start=page_obj.paginator.num_pages|add:"-4" end=page_obj.paginator.num_pages %}
+                                                    {% if start < 1 %}
+                                                        {% with start=1 %}
+                                                            {% for num in page_obj.paginator.page_range %}
+                                                                {% if num >= start and num <= end %}
+                                                                    <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                                                        <a class="page-link"
+                                                                           href="?page={{ num }}&search={{ search_query }}&keyword={{ selected_keyword }}">{{ num }}</a>
+                                                                    </li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        {% for num in page_obj.paginator.page_range %}
+                                                            {% if num >= start and num <= end %}
+                                                                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                                                    <a class="page-link"
+                                                                       href="?page={{ num }}&search={{ search_query }}&keyword={{ selected_keyword }}">{{ num }}</a>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% else %}
+                                                {% for num in page_obj.paginator.page_range %}
+                                                    {% if num >= start and num <= end %}
+                                                        <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                                            <a class="page-link"
+                                                               href="?page={{ num }}&search={{ search_query }}&keyword={{ selected_keyword }}">{{ num }}</a>
+                                                        </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endwith %}
+                                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               href="?page=
+
+                                                       {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}&search={{ search_query }}&keyword={{ selected_keyword }}"
+                                               aria-label="Next">
+                                                <span aria-hidden="true">下一页</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               href="?page={{ page_obj.paginator.num_pages }}&search={{ search_query }}&keyword={{ selected_keyword }}"
+                                               aria-label="Last">
+                                                <span aria-hidden="true">尾页</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                           </div>
+                       </div>
+                   </div>
+                </div>
+            </section>
+        </div>
+{% endblock %}
